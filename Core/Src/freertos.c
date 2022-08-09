@@ -29,6 +29,7 @@
 #include "iwdg.h"
 #include "usart.h"
 #include "gpio.h"
+#include "fatfs.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,7 +51,15 @@
 /* USER CODE BEGIN Variables */
 osTimerId osProgTimerIWDG;  //программный таймер перезагружающий сторожевик
 
-
+extern char logSDPath;  // User logical drive path 
+extern FIL logfile;     //файловый объект
+extern FATFS log_fs ;    // рабочая область (file system object) для логических диска
+extern FRESULT result; //код возврата функций FatFs
+extern uint8_t work [_MAX_SS];
+extern uint32_t byteswritten, bytesread; //счетчики записи/чтения файла
+extern uint8_t rtext[TXT_BUFFER_SIZE]; //буффер считанных данных с SD карты
+extern char wtext[TXT_BUFFER_SIZE];  //буффер записи на SD карту
+extern const char FileName [];
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
 
@@ -144,13 +153,21 @@ void StartDefaultTask(void const * argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
 	osTimerStart(osProgTimerIWDG, 2000); //запуск циклического таймера
+	result = f_mkfs (&logSDPath, FM_FAT32, 0, work, 512);
+	if (result != FR_OK)
+		UART3_SendString ("Formating_SD_card_failed\r\n");
+	mount_card (&log_fs);
+	byteswritten = 21;
+	
   /* Infinite loop */
   for(;;)
   {
    	LED_RED (1);
-		osDelay (1000);
+		write_reg (&logfile, FileName, wtext);
+		osDelay (2000);
 		LED_RED (0);
-		osDelay (1000);
+		read_txt (&logfile, FileName, byteswritten);
+		osDelay (2000);
   }
   /* USER CODE END StartDefaultTask */
 }

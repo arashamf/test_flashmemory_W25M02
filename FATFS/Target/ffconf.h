@@ -26,6 +26,7 @@
 
 #include "main.h"
 #include "stm32f7xx_hal.h"
+#include "bsp_driver_sd.h"
 #include "cmsis_os.h" /* _FS_REENTRANT set to 1 and CMSIS API chosen */
 
 /*-----------------------------------------------------------------------------/
@@ -111,8 +112,8 @@
 /   950 - Traditional Chinese (DBCS)
 */
 
-#define _USE_LFN     0    /* 0 to 3 */
-#define _MAX_LFN     255  /* Maximum LFN length to handle (12 to 255) */
+#define _USE_LFN     3    /* 0 to 3 */
+#define _MAX_LFN     63  /* Maximum LFN length to handle (12 to 255) */
 /* The _USE_LFN switches the support of long file name (LFN).
 /
 /   0: Disable support of LFN. _MAX_LFN has no effect.
@@ -242,7 +243,7 @@
 
 #define _FS_REENTRANT    1  /* 0:Disable or 1:Enable */
 #define _FS_TIMEOUT      1000 /* Timeout period in unit of time ticks */
-#define _SYNC_t          osSemaphoreId
+#define _SYNC_t          osMutexId
 /* The option _FS_REENTRANT switches the re-entrancy (thread safe) of the FatFs
 /  module itself. Note that regardless of this option, file access to different
 /  volume is always re-entrant and volume control functions, f_mount(), f_mkfs()

@@ -20,9 +20,11 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "dma.h"
 #include "fatfs.h"
 #include "i2c.h"
 #include "iwdg.h"
+#include "sdmmc.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -72,6 +74,16 @@ char RS485_RXbuffer [RX_BUFFER_SIZE] = {0};
 uint8_t flash_rx_buf[20] = {0};
 uint8_t page_buf [2048] = {0};
 uint8_t flash_tx_buf[10];
+
+char logSDPath; // User logical drive path 
+FIL logfile;     //файловый объект 
+FATFS log_fs ;    // рабочая область (file system object) для логических диска
+FRESULT result; //код возврата функций FatFs
+uint8_t work [_MAX_SS];
+const char FileName [] = "log.txt";
+uint32_t byteswritten, bytesread; //счетчик чтения/записи файла
+char wtext[TXT_BUFFER_SIZE] = {"It`s_a_test_version\r\n"};  //буффер записи на SD карту
+uint8_t rtext[TXT_BUFFER_SIZE]; //буффер считанных данных с SD карты
 /* USER CODE END 0 */
 
 /**
@@ -111,6 +123,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_I2C1_Init();
   MX_USART3_UART_Init();
   MX_FATFS_Init();
@@ -119,28 +132,28 @@ int main(void)
   MX_TIM4_Init();
   MX_SPI4_Init();
   MX_TIM6_Init();
+  MX_SDMMC1_SD_Init();
   /* USER CODE BEGIN 2 */
 	SPI4_CS1_OFF;
 	SPI4_CS2_OFF;
+	ENABLE_SD_CARD;
+	
 	for (uint16_t count = 0; count < (PAGE_SIZE-3); count++)
 	{
 		*(test2+count) = 0x7E;
 	}
 	test2 [PAGE_SIZE-3] = '\r'; test2 [PAGE_SIZE-2] = '\n'; test2 [PAGE_SIZE-1] = '\0';
-//	size = (sizeof (test1)/sizeof (*test1));
+	size = (sizeof (test1)/sizeof (*test1));
 	W25M_Reset ();
 	
 /*	W25M_ReadID (flash_rx_buf);
 	sprintf (UART3_msg_TX,"ID=%x %x %x %x %x %x\r\n", *(flash_rx_buf), *(flash_rx_buf+1), *(flash_rx_buf+2), *(flash_rx_buf+3), *(flash_rx_buf+4), *(flash_rx_buf+5));
 	UART3_SendString ((char*)UART3_msg_TX);	
-	
-	W25M_Read_SR (flash_rx_buf, CHIP_1);
-	sprintf (UART3_msg_TX,"SR1=%x SR2=%x SR3=%x \r\n", *(flash_rx_buf), *(flash_rx_buf+1), *(flash_rx_buf+2));
-	UART3_SendString ((char*)UART3_msg_TX)
+
 	size = (sizeof (test1)/sizeof (*test1));*/
-	;
+
 //	W25M_EraseSector (0x1, CHIP_1);
-	W25M_Write_SR (SREGISTR_1, 0x80, CHIP_1);	
+/*	W25M_Write_SR (SREGISTR_1, 0x80, CHIP_1);	
 	W25M_Write_SR (SREGISTR_2, 0x18, CHIP_1);	
 	W25M_Read_SR (flash_rx_buf, CHIP_1);
 	sprintf (UART3_msg_TX,"SR1=%x SR2=%x SR3=%x \r\n", *(flash_rx_buf), *(flash_rx_buf+1), *(flash_rx_buf+2));
@@ -149,8 +162,10 @@ int main(void)
 	HAL_Delay (5);
 	W25M_ReadData (page_buf, PAGE_SIZE, 0, 0, CHIP_1);
 	
-//	sprintf (UART3_msg_TX,"%u%u%u%u%u%u%u%u%u%u%u\r\n", page_buf[0], page_buf[1],page_buf[2],page_buf[3],page_buf[4],page_buf[5],page_buf[6],page_buf[7],page_buf[8],page_buf[9],page_buf[10]);
-//	UART3_SendString ((char*)UART3_msg_TX)
+	sprintf (UART3_msg_TX,"%u%u%u%u%u%u%u%u%u%u%u\r\n", page_buf[0], page_buf[1],page_buf[2],page_buf[3],page_buf[4],page_buf[5],page_buf[6],page_buf[7],page_buf[8],page_buf[9],page_buf[10]);
+	UART3_SendString ((char*)UART3_msg_TX)*/
+	
+	UART3_SendString ("start_test\r\n");
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */
@@ -219,9 +234,12 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART3|RCC_PERIPHCLK_I2C1;
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART3|RCC_PERIPHCLK_I2C1
+                              |RCC_PERIPHCLK_SDMMC1|RCC_PERIPHCLK_CLK48;
   PeriphClkInitStruct.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
   PeriphClkInitStruct.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
+  PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLL;
+  PeriphClkInitStruct.Sdmmc1ClockSelection = RCC_SDMMC1CLKSOURCE_CLK48;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
     Error_Handler();

@@ -29,6 +29,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal.h"
+#include "stm32f7xx_hal.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -58,8 +59,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define SDMMC_PSO_Pin GPIO_PIN_2
-#define SDMMC_PSO_GPIO_Port GPIOE
+#define SD_ENABLE_Pin GPIO_PIN_2
+#define SD_ENABLE_GPIO_Port GPIOE
 #define SIDE_COVER_Pin GPIO_PIN_3
 #define SIDE_COVER_GPIO_Port GPIOE
 #define TOP_COVER_Pin GPIO_PIN_4
@@ -82,8 +83,8 @@ void Error_Handler(void);
 #define DE_485_GPIO_Port GPIOC
 #define RE_485_Pin GPIO_PIN_7
 #define RE_485_GPIO_Port GPIOC
-#define SDMMC_CD_Pin GPIO_PIN_0
-#define SDMMC_CD_GPIO_Port GPIOD
+#define SD_DETECTED_Pin GPIO_PIN_0
+#define SD_DETECTED_GPIO_Port GPIOD
 #define BUTTON_3_Pin GPIO_PIN_3
 #define BUTTON_3_GPIO_Port GPIOD
 #define BUTTON_2_Pin GPIO_PIN_4
@@ -108,6 +109,7 @@ void Error_Handler(void);
 #define CHIP_1 1
 #define CHIP_2 2
 #define PAGE_SIZE 2048
+#define TXT_BUFFER_SIZE 50
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
